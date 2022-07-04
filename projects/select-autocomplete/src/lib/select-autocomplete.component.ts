@@ -69,6 +69,14 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
   ngOnInit(): void {
     this.onSearch.emit('');
     this.options$.subscribe(res => {
+      if(!this.selectedOps.length) {
+      this.selectedOptions.forEach(element => {
+        const selectedOp = res.find( option => option.id == element )
+        if(selectedOp) {
+          this.selectedOps = [...new Set([...this.selectedOps, selectedOp])];
+        }
+      });
+    }
       const copyArray = [...res];
       copyArray.sort(this.sortOptions());
       this.originOptions = this.filteredOptions = copyArray;
@@ -105,7 +113,6 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
       }
       this.selectedOps.sort(this.sortOptions());
       this.displayOptions.sort(this.sortOptions());
-      this.preserveSelectedOptions();
       this.onDisplayString();
 
     } else if (this.fieldFormControl.value) {
@@ -286,13 +293,13 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
   }
 
   clearSelection(): void {
+    this.selectedValue = [];
+    this.selectionChange.emit(this.selectedValue);
     this.options = this.originOptions;
     this.selectAllChecked = false;
-    this.selectedValue = [];
     this.allSelectedValues = [];
     this.selectedOps = [];
     this.selectedVal = null;
-    this.selectionChange.emit(this.selectedValue);
   }
 
   reArrangeOptions(): void {
@@ -327,15 +334,6 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
       }
       return 0;
     };
-  }
-
-  preserveSelectedOptions(): void {
-    this.displayOptions = this.displayOptions.filter(opt => this.allSelectedValues.includes(opt[this.value]));
-    this.allSelectedValues.forEach(option => {
-      if (!this.displayOptions.find(opt => opt[this.value] == option)) {
-        this.displayOptions.push(this.originOptions.find(opt => opt[this.value] == option));
-      }
-    });
   }
 }
 
