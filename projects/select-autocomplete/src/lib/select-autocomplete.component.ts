@@ -101,15 +101,20 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
       this.fieldFormControl.enable();
     }
     if (this.selectedOptions) {
-      this.selectedValue = [...new Set([...this.selectedValue, ...this.selectedOptions])];
+      this.selectedValue = this.selectedValue ? [...new Set([...this.selectedValue, ...this.selectedOptions])] : this.selectedOptions;
       this.allSelectedValues = this.selectedOptions;
       if (this.selectedVal) {
+        if(this.selectedOptions.length) {
         this.options = this.options?.filter((obj) => {
           if (obj.id == this.selectedVal) {
             this.selectedOps.push(obj);
           }
           return obj.id != this.selectedVal.toString();
         });
+      }
+      else {
+        this.clearSelection();
+      }
       }
       this.selectedOps.sort(this.sortOptions());
       this.displayOptions.sort(this.sortOptions());
@@ -312,9 +317,13 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
         unselectedOptions.push(option);
       }
     });
-    this.options = (this.selectedValue.length === 0) ? this.originOptions : [
-      ...unselectedOptions
-    ];
+    if(this.selectedValue.length === 0) {
+      this.options = this.originOptions;
+      this.selectedOps = [];
+    }
+    else {
+      this.options = [...unselectedOptions];
+    }
   }
 
   checkIfAllSelected(): void {
@@ -336,5 +345,3 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
     };
   }
 }
-
-
