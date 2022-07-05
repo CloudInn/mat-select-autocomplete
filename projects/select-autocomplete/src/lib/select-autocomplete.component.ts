@@ -81,7 +81,7 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
       copyArray.sort(this.sortOptions());
       this.originOptions = this.filteredOptions = copyArray;
       if (this.search) {
-        let notSelectedOptions = [];
+        const notSelectedOptions = [];
         this.originOptions.forEach(option => {
           if (!this.selectedValue.includes(option[this.value])) {
             notSelectedOptions.push(option);
@@ -94,6 +94,7 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
     });
   }
   ngOnChanges(): void {
+    this.selectedValue = this.selectedValue ?? [];
     if (this.disabled) {
       this.fieldFormControl.disable();
     } else {
@@ -109,7 +110,7 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
             this.selectedOps.push(obj);
           }
           return obj.id != this.selectedVal.toString();
-        })
+        });
       }
       else {
         this.clearSelection();
