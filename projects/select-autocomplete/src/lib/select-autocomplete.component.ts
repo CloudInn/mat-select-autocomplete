@@ -106,10 +106,10 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
       if (this.selectedVal) {
         if(this.selectedOptions.length) {
         this.options = this.options?.filter((obj) => {
-          if (obj.id == this.selectedVal) {
+          if (obj[this.value] == this.selectedVal) {
             this.selectedOps.push(obj);
           }
-          return obj.id != this.selectedVal.toString();
+          return obj[this.value] != this.selectedVal.toString();
         });
       }
       else {
