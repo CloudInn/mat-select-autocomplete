@@ -132,10 +132,17 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
     this.searchInput.nativeElement.value = '';
     if (this.selectElem) {
       let click: MouseEvent = null;
-      this.selectElem.overlayDir.backdropClick.subscribe((event) => {
-        // the backdrop element is still in the DOM, so store the event for using after it has been detached
-        click = event;
-      });
+      if (this.selectElem.overlayDir) {
+        this.selectElem.overlayDir.backdropClick.subscribe((event) => { // For backward compatibility for old versions
+          // the backdrop element is still in the DOM, so store the event for using after it has been detached
+          click = event;
+        });
+      } else if (this.selectElem._overlayDir) { // To handle the update of angular 12 which made the overlayDir property private
+        this.selectElem._overlayDir.backdropClick.subscribe((event) => {
+          // the backdrop element is still in the DOM, so store the event for using after it has been detached
+          click = event;
+        });
+      }
       const nativeEl = this.selectElem._elementRef.nativeElement;
       nativeEl.addEventListener('focus', () => {
         this.selectElem.open();
