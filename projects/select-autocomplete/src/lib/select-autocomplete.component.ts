@@ -71,13 +71,13 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
     this.options$.subscribe(res => {
       if(!this.selectedOps.length) {
       this.selectedOptions.forEach(element => {
-        const selectedOp = res.find( option => option.id == element )
+        const selectedOp = res?.find(option => option[this.value] == element);
         if(selectedOp) {
           this.selectedOps = [...new Set([...this.selectedOps, selectedOp])];
         }
       });
     }
-      const copyArray = [...res];
+      const copyArray = [...res ?? []];
       copyArray.sort(this.sortOptions());
       this.originOptions = this.filteredOptions = copyArray;
       if (this.search) {
@@ -137,22 +137,29 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
           // the backdrop element is still in the DOM, so store the event for using after it has been detached
           click = event;
         });
+        this.selectElem.overlayDir.detach.subscribe((a) => {
+          if (click) {
+            const el = document.elementFromPoint(click.pageX, click.pageY) as HTMLElement;
+            el.click();
+          }
+        });
       } else if (this.selectElem._overlayDir) { // To handle the update of angular 12 which made the overlayDir property private
         this.selectElem._overlayDir.backdropClick.subscribe((event) => {
           // the backdrop element is still in the DOM, so store the event for using after it has been detached
           click = event;
+        });
+        this.selectElem._overlayDir.detach.subscribe((a) => {
+          if (click) {
+            const el = document.elementFromPoint(click.pageX, click.pageY) as HTMLElement;
+            el.click();
+          }
         });
       }
       const nativeEl = this.selectElem._elementRef.nativeElement;
       nativeEl.addEventListener('focus', () => {
         this.selectElem.open();
       });
-      this.selectElem.overlayDir.detach.subscribe((a) => {
-        if (click) {
-          const el = document.elementFromPoint(click.pageX, click.pageY) as HTMLElement;
-          el.click();
-        }
-      });
+
     }
   }
 
