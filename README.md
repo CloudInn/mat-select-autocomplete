@@ -37,4 +37,4 @@ npm run package
 
 ## To publish the package
 npm login
-npm publish ./dist/select-autocomplete/mat-select-autocomplete-angular11-1.4.9.tgz
+npm publish ./dist/select-autocomplete/mat-select-autocomplete-angular11-1.4.23.tgz

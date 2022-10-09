@@ -71,13 +71,13 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
     this.options$.subscribe(res => {
       if(!this.selectedOps.length) {
       this.selectedOptions.forEach(element => {
-        const selectedOp = res.find( option => option.id == element )
+        const selectedOp = res?.find(option => option[this.value] == element);
         if(selectedOp) {
           this.selectedOps = [...new Set([...this.selectedOps, selectedOp])];
         }
       });
     }
-      const copyArray = [...res];
+      const copyArray = [...res ?? []];
       copyArray.sort(this.sortOptions());
       this.originOptions = this.filteredOptions = copyArray;
       if (this.search) {
@@ -106,10 +106,10 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
       if (this.selectedVal) {
         if(this.selectedOptions.length) {
         this.options = this.options?.filter((obj) => {
-          if (obj.id == this.selectedVal) {
+          if (obj[this.value] == this.selectedVal) {
             this.selectedOps.push(obj);
           }
-          return obj.id != this.selectedVal.toString();
+          return obj[this.value] != this.selectedVal.toString();
         });
       }
       else {
@@ -132,20 +132,34 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
     this.searchInput.nativeElement.value = '';
     if (this.selectElem) {
       let click: MouseEvent = null;
-      this.selectElem.overlayDir.backdropClick.subscribe((event) => {
-        // the backdrop element is still in the DOM, so store the event for using after it has been detached
-        click = event;
-      });
+      if (this.selectElem.overlayDir) {
+        this.selectElem.overlayDir.backdropClick.subscribe((event) => { // For backward compatibility for old versions
+          // the backdrop element is still in the DOM, so store the event for using after it has been detached
+          click = event;
+        });
+        this.selectElem.overlayDir.detach.subscribe((a) => {
+          if (click) {
+            const el = document.elementFromPoint(click.pageX, click.pageY) as HTMLElement;
+            el.click();
+          }
+        });
+      } else if (this.selectElem._overlayDir) { // To handle the update of angular 12 which made the overlayDir property private
+        this.selectElem._overlayDir.backdropClick.subscribe((event) => {
+          // the backdrop element is still in the DOM, so store the event for using after it has been detached
+          click = event;
+        });
+        this.selectElem._overlayDir.detach.subscribe((a) => {
+          if (click) {
+            const el = document.elementFromPoint(click.pageX, click.pageY) as HTMLElement;
+            el.click();
+          }
+        });
+      }
       const nativeEl = this.selectElem._elementRef.nativeElement;
       nativeEl.addEventListener('focus', () => {
         this.selectElem.open();
       });
-      this.selectElem.overlayDir.detach.subscribe((a) => {
-        if (click) {
-          const el = document.elementFromPoint(click.pageX, click.pageY) as HTMLElement;
-          el.click();
-        }
-      });
+
     }
   }
 

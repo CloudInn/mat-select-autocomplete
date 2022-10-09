@@ -44,5 +44,8 @@
       }
     }
   },
-  "defaultProject": "select-autocomplete"
+  "defaultProject": "select-autocomplete",
+  "cli": {
+    "analytics": false
+  }
 }
