@@ -262,8 +262,7 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
 
   onSelectionChange(val): void {
     this.selectedValue = val.value;
-    this.allSelectedValues.push(...this.selectedValue);
-    this.allSelectedValues = [...new Set([...this.allSelectedValues])];
+    this.allSelectedValues = [...new Set([...this.allSelectedValues, ...this.selectedValue])];
     this.checkIfAllSelected();
     this.selectionChange.emit(this.allSelectedValues);
   }
