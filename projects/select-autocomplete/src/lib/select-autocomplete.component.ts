@@ -8,7 +8,7 @@ import {
   OnInit,
   AfterViewInit,
 } from '@angular/core';
-import { UntypedFormControl } from '@angular/forms';
+import { FormControl } from '@angular/forms';
 
 export interface ElementsSelectors {
   inputField: string;
@@ -31,13 +31,13 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
   @Input() display = 'display';
   @Input() extraDisplay?; // value before option text ex: [id-description]
   @Input() value = 'value';
-  @Input() fieldFormControl: UntypedFormControl = new UntypedFormControl();
+  @Input() fieldFormControl: FormControl = new FormControl();
   @Input() errorMsg = 'Field is required';
   @Input() showErrorMsg = false;
   @Input() selectedOptions;
   @Input() multiple = true;
   @Input() labelCount = 1;
-  @Input() appearance: 'standard' | 'fill' | 'outline' = 'standard';
+  @Input() appearance: 'fill' | 'outline' = 'fill';
   @Input() fieldLabel: string;
   @Input() fieldsSelectors: ElementsSelectors;
   @Input() ElementWidth;
@@ -106,9 +106,11 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
       this.allSelectedValues = this.selectedOptions;
       if (this.selectedVal) {
         if(this.selectedOptions.length) {
-        this.options = this.options?.filter((obj) => {
+        this.options = this.originOptions?.filter((obj) => {
           if (obj[this.value] == this.selectedVal) {
             this.selectedOps.push(obj);
+          } else {
+            this.selectedOps = this.selectedOps.filter(obj=> this.selectedValue.includes(obj[this.value]));
           }
           return obj[this.value] != this.selectedVal.toString();
         });

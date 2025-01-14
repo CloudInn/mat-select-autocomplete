@@ -66,6 +66,12 @@
   &[aria-disabled="true"]{
     cursor: pointer;
   }
+  .mat-mdc-option.mdc-list-item {
+    pointer-events: auto;
+  }
+  .mat-mdc-option.mdc-list-item--disabled .mdc-list-item__primary-text {
+    color: #000;
+  }
   span {
     color: black;
     padding: 12px;
@@ -76,10 +82,12 @@
     color: #6b778c;
   }
 }
-::ng-deep .mat-select-panel {
-  max-height: 500px;
-  mat-option.mat-option {
-    height: 40px;
+
+::ng-deep div.mat-mdc-select-panel {
+  max-height: 500px !important;
+  padding: 0px !important;
+  .mat-mdc-option {
+    height: 40px !important;
   }
   .mat-option.mat-active {
     background-color: #f5f5f5;

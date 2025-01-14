@@ -41,10 +41,9 @@
     </div>
       <mat-option *ngIf="options && !options.length && !selectedOps.length" [disabled]="true"> No results found.
       </mat-option>
-      <mat-option [disabled]="true" class="clear-selection" (click)="clearSelection()"
+      <mat-option class="clear-selection" (click)="clearSelection()"
         id="{{ fieldsSelectors?.clearSelection }}" *ngIf="selectedOps?.length">
         <div>
-          <mat-divider></mat-divider>
           <span [attr.data-cy]="fieldsSelectors?.clearSelection">Clear selected items</span>
         </div>
       </mat-option>
