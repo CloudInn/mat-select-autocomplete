@@ -18,9 +18,10 @@ export interface ElementsSelectors {
   searchField?: string
 }
 @Component({
-  selector: 'mat-select-autocomplete',
-  templateUrl: './select-autocomplete.component.html',
-  styleUrls: ['./select-autocomplete.component.scss']
+    selector: 'mat-select-autocomplete',
+    templateUrl: './select-autocomplete.component.html',
+    styleUrls: ['./select-autocomplete.component.scss'],
+    standalone: false
 })
 export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() selectPlaceholder = 'search...';
