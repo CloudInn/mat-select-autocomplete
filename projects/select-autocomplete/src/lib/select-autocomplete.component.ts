@@ -8,7 +8,7 @@ import {
   OnInit,
   AfterViewInit,
 } from '@angular/core';
-import { FormControl } from '@angular/forms';
+import { UntypedFormControl } from '@angular/forms';
 
 export interface ElementsSelectors {
   inputField: string;
@@ -30,7 +30,7 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
   @Input() display = 'display';
   @Input() extraDisplay?; // value before option text ex: [id-description]
   @Input() value = 'value';
-  @Input() fieldFormControl: FormControl = new FormControl();
+  @Input() fieldFormControl: UntypedFormControl = new UntypedFormControl();
   @Input() errorMsg = 'Field is required';
   @Input() showErrorMsg = false;
   @Input() selectedOptions;
