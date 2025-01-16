@@ -105,19 +105,18 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
       this.selectedValue = this.selectedValue ? [...new Set([...this.selectedValue, ...this.selectedOptions])] : this.selectedOptions;
       this.allSelectedValues = this.selectedOptions;
       if (this.selectedVal) {
-        if(this.selectedOptions.length) {
-        this.options = this.originOptions?.filter((obj) => {
-          if (obj[this.value] == this.selectedVal) {
-            this.selectedOps.push(obj);
-          } else {
-            this.selectedOps = this.selectedOps.filter(obj=> this.selectedValue.includes(obj[this.value]));
-          }
-          return obj[this.value] != this.selectedVal.toString();
-        });
-      }
-      else {
-        this.clearSelection();
-      }
+        if (this.selectedOptions.length) {
+          this.options = this.originOptions?.filter((obj) => {
+            if (obj[this.value] == this.selectedVal && !this.selectedOps.find(op => op[this.value] === this.selectedVal)) {
+              this.selectedOps.push(obj);
+            }
+            return obj[this.value] != this.selectedVal.toString();
+          });
+          this.selectedOps = this.selectedOps.filter(obj => this.selectedValue.includes(obj[this.value]));
+        }
+        else {
+          this.clearSelection();
+        }
       }
       this.selectedOps.sort(this.sortOptions());
       this.displayOptions.sort(this.sortOptions());
