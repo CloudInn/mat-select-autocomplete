@@ -8,11 +8,29 @@ import {
   DoCheck
 } from "@angular/core";
 import { FormControl } from "@angular/forms";
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: "mat-select-autocomplete",
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatCheckboxModule,
+    MatButtonModule,
+    MatIconModule
+  ],
   template: `
-    <mat-form-field appearance="{{ appearance }}">
+    <mat-form-field [appearance]="appearance">
       <mat-select
         #selectElem
         [placeholder]="placeholder"
@@ -107,10 +125,18 @@ export class SelectAutocompleteComponent implements OnChanges, DoCheck {
 
   // New Options
   @Input() labelCount: number = 1;
-  @Input() appearance: "standard" | "fill" | "outline" = "standard";
+  @Input() appearance: "fill" | "outline" = "fill";
+  
+  // Compatibility properties for ng-crud-ui
+  @Input() fieldFormControl: FormControl;
+  @Input() ElementWidth: string;
+  @Input() options$: any;
+  @Input() fieldsSelectors: any;
 
   @Output()
   selectionChange: EventEmitter<any> = new EventEmitter();
+  @Output()
+  onSearch: EventEmitter<any> = new EventEmitter();
 
   @ViewChild("selectElem") selectElem;
 
@@ -121,15 +147,30 @@ export class SelectAutocompleteComponent implements OnChanges, DoCheck {
   constructor() {}
 
   ngOnChanges() {
+    // Handle compatibility with ng-crud-ui
+    if (this.fieldFormControl) {
+      this.formControl = this.fieldFormControl;
+    }
+    if (this.options$) {
+      this.options$.subscribe((opts: any) => {
+        this.options = opts;
+        this.filteredOptions = opts;
+      });
+    }
+    
     if (this.disabled) {
       this.formControl.disable();
     } else {
       this.formControl.enable();
     }
-    this.filteredOptions = this.options;
+    
+    if (this.options) {
+      this.filteredOptions = this.options;
+    }
+    
     if (this.selectedOptions) {
       this.selectedValue = this.selectedOptions;
-    } else if (this.formControl.value) {
+    } else if (this.formControl && this.formControl.value) {
       this.selectedValue = this.formControl.value;
     }
   }
@@ -173,6 +214,9 @@ export class SelectAutocompleteComponent implements OnChanges, DoCheck {
     if (!this.filteredOptions.length) {
       this.selectAllChecked = false;
     }
+    
+    // Emit onSearch for ng-crud-ui compatibility
+    this.onSearch.emit(value);
   }
 
   hideOption(option) {
