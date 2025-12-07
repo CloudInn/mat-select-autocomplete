@@ -1,5 +1,5 @@
 {
-  "name": "mat-select-autocomplete",
+  "name": "@cloudinn/mat-select-autocomplete",
   "version": "2.0.0",
   "description": "Angular material select component with autocomplete and select all features",
   "keywords": [
@@ -10,6 +10,9 @@
     "mat-select",
     "autocomplete"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "peerDependencies": {
     "@angular/common": "^20.0.0",
     "@angular/core": "^20.0.0",
