@@ -1,0 +1,90 @@
+name: Publish @cloudinn/mat-select-autocomplete
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Build and validate without publishing'
+        type: boolean
+        default: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          source_version=$(node -p "require('./projects/select-autocomplete/package.json').version")
+          echo "source=$source_version" >> "$GITHUB_OUTPUT"
+          echo "Source version: $source_version"
+
+          if [ "$REF_TYPE" = "tag" ]; then
+            tag_version="${REF_NAME#v}"
+            echo "Tag version:    $tag_version"
+            if [ "$tag_version" != "$source_version" ]; then
+              echo "::error::Tag $REF_NAME does not match projects/select-autocomplete/package.json ($source_version). Bump the version in the repo and re-tag."
+              exit 1
+            fi
+          fi
+
+      - name: Reject an already-published version
+        env:
+          VERSION: ${{ steps.version.outputs.source }}
+        run: |
+          if npm view "@cloudinn/mat-select-autocomplete@$VERSION" version >/dev/null 2>&1; then
+            echo "::error::@cloudinn/mat-select-autocomplete@$VERSION is already on npm. Bump projects/select-autocomplete/package.json."
+            exit 1
+          fi
+          echo "@cloudinn/mat-select-autocomplete@$VERSION is unpublished, continuing."
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - run: npm ci
+
+      - run: npm run build_lib
+
+      - name: Verify the built package carries the expected version
+        env:
+          EXPECTED: ${{ steps.version.outputs.source }}
+        run: |
+          built=$(node -p "require('./dist/select-autocomplete/package.json').version")
+          if [ "$built" != "$EXPECTED" ]; then
+            echo "::error::dist/select-autocomplete was built as $built but $EXPECTED was expected."
+            exit 1
+          fi
+          echo "Built @cloudinn/mat-select-autocomplete@$built"
+
+      # Trusted publishing needs Node >= 22.14 and npm >= 11.5.1. No token: npm authenticates via
+      # the OIDC id-token, and provenance is attached automatically.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm install -g npm@latest
+
+      - name: Publish
+        if: github.event_name == 'push' || inputs.dry_run == false
+        working-directory: dist/select-autocomplete
+        run: npm publish --access public
+
+      - name: Dry run
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run == true
+        working-directory: dist/select-autocomplete
+        run: npm publish --access public --dry-run
