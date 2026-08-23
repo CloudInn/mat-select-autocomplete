@@ -285,6 +285,19 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
     this.reArrangeOptions();
   }
 
+  private focusSiblingField(direction: number): void {
+    const host = this.selectElem._elementRef.nativeElement as HTMLElement;
+    const selector =
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]),' +
+      ' textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const fields = Array.from(document.querySelectorAll<HTMLElement>(selector)).filter(
+      el => !el.closest('.cdk-overlay-container') && el.offsetParent !== null
+    );
+    const next = fields[fields.indexOf(host) + direction];
+    this.selectElem.close();
+    next?.focus();
+  }
+
   keyUp(ev): void {
     if (ev.keyCode === 17) {
       this.ctrlClicked = false;
@@ -292,6 +305,14 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
   }
 
   keyDown(ev): void {
+    if (ev.key === 'Tab') {
+      // The panel steals focus into this search input when it opens, so a plain Tab walks the
+      // overlay's own controls and then escapes the form. Close and hand focus to the next field.
+      ev.preventDefault();
+      ev.stopPropagation();
+      this.focusSiblingField(ev.shiftKey ? -1 : 1);
+      return;
+    }
     if (ev.keyCode === 17) {
       this.ctrlClicked = true;
     }
