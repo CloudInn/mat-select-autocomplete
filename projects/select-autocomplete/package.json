@@ -1,6 +1,6 @@
 {
   "name": "@cloudinn/mat-select-autocomplete",
-  "version": "21.0.0",
+  "version": "21.0.1",
   "description": "Angular material select component with autocomplete and select all features",
   "keywords": [
     "Angular",
