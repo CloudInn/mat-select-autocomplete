@@ -1,0 +1,52 @@
+<mat-form-field appearance="{{ appearance }}" class="select-autocomplete"
+  [ngStyle]="{'width': ElementWidth ? ElementWidth : '100%' }">
+  <mat-label *ngIf="fieldLabel">{{ fieldLabel }}</mat-label>
+  <mat-select #selectElem id="{{ fieldsSelectors?.selectField }}" [attr.data-cy]="fieldsSelectors?.selectField"
+    [disabled]="disabled" [multiple]="multiple" [placeholder]="placeholder" [formControl]="fieldFormControl"
+    [(ngModel)]="selectedValue" (selectionChange)="onSelectionChange($event)" (openedChange)="setFocus($event)">
+    <div class="search-container">
+      <div class="box-search">
+        <mat-checkbox *ngIf="multiple" color="primary" class="box-select-all" [(ngModel)]="selectAllChecked"
+          (change)="toggleSelectAll($event); searchInput.value = ''; filterItem(''); search = false;">
+        </mat-checkbox>
+        <input #searchInput id="{{ fieldsSelectors?.inputField }}" [attr.data-cy]="fieldsSelectors?.searchField"
+          type="text" [ngClass]="{ 'pl-1': !multiple }" (input)="filterItem(searchInput.value)"
+          (keydown)="keyDown($event); search = true" (keyup)="keyUp($event); search = true" (keyup.enter)="searchInput.value = ''; filterItem(''); search = false;"
+          placeholder="Search..." />
+        <div class="box-search-icon" (click)="filterItem(''); searchInput.value = ''">
+          <button mat-icon-button class="search-button">
+            <mat-icon class="mat-24" aria-label="Search icon" id="{{ fieldsSelectors?.clearFieldIcon }}"
+              [attr.data-cy]="fieldsSelectors?.clearFieldIcon">clear
+            </mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+    <mat-select-trigger> {{ onDisplayString() }} </mat-select-trigger>
+    <div class="options-container">
+      <mat-option *ngFor="let option of options; let i = index" [disabled]="option.disabled" [value]="option[value]"
+        [style.display]="'flex'" (onSelectionChange)="optionClicked($event);"
+        [attr.data-cy]="fieldsSelectors?.selectField + '-unselected-option-' + i" (click)="searchInput.value = ''; filterItem(''); this.search = false;">
+        <ng-container *ngIf="option[extraDisplay]">{{option[extraDisplay]}}</ng-container> {{ option[display] }}
+      </mat-option>
+    </div>
+      <mat-divider *ngIf="selectedOps.length && options.length"></mat-divider>
+      <div class="options-container">
+      <mat-option class="selected-options" *ngFor="let selectedOption of selectedOps; let i = index"
+        [value]="selectedOption[value]" [attr.data-cy]="fieldsSelectors?.selectField + '-selected-option-' + i"
+        (onSelectionChange)="optionClicked($event);" (click)="searchInput.value = ''; filterItem(''); this.search = false;">
+        <ng-container *ngIf="selectedOption[extraDisplay]">{{selectedOption[extraDisplay]}}</ng-container> {{
+        selectedOption[display] }}
+      </mat-option>
+    </div>
+      <mat-option *ngIf="options && !options.length && !selectedOps.length" [disabled]="true"> No results found.
+      </mat-option>
+      <mat-option class="clear-selection" (click)="clearSelection()"
+        id="{{ fieldsSelectors?.clearSelection }}" *ngIf="selectedOps?.length">
+        <div>
+          <span [attr.data-cy]="fieldsSelectors?.clearSelection">Clear selected items</span>
+        </div>
+      </mat-option>
+  </mat-select>
+  <mat-hint data-cy="validation-message-multiselect-autocomplete" style="color: red" *ngIf="showErrorMsg">{{ errorMsg }}</mat-hint>
+</mat-form-field>

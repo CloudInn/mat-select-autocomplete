@@ -5,207 +5,228 @@ import {
   OnChanges,
   Output,
   ViewChild,
-  DoCheck
-} from "@angular/core";
-import { FormControl } from "@angular/forms";
+  OnInit,
+  AfterViewInit,
+} from '@angular/core';
+import { FormControl } from '@angular/forms';
 
+export interface ElementsSelectors {
+  inputField: string;
+  selectField: string;
+  clearFieldIcon: string;
+  clearSelection: string;
+  searchField?: string
+}
 @Component({
-  selector: "mat-select-autocomplete",
-  template: `
-    <mat-form-field appearance="{{ appearance }}">
-      <mat-select
-        #selectElem
-        [placeholder]="placeholder"
-        [formControl]="formControl"
-        [multiple]="multiple"
-        [(ngModel)]="selectedValue"
-        (selectionChange)="onSelectionChange($event)"
-      >
-        <div class="box-search">
-          <mat-checkbox
-            *ngIf="multiple"
-            color="primary"
-            class="box-select-all"
-            [(ngModel)]="selectAllChecked"
-            (change)="toggleSelectAll($event)"
-          ></mat-checkbox>
-          <input
-            #searchInput
-            type="text"
-            [ngClass]="{ 'pl-1': !multiple }"
-            (input)="filterItem(searchInput.value)"
-            [placeholder]="selectPlaceholder"
-          />
-          <div
-            class="box-search-icon"
-            (click)="filterItem(''); searchInput.value = ''"
-          >
-            <button mat-icon-button class="search-button">
-              <mat-icon class="mat-24" aria-label="Search icon">clear</mat-icon>
-            </button>
-          </div>
-        </div>
-        <mat-select-trigger>
-          {{ onDisplayString() }}
-        </mat-select-trigger>
-        <mat-option
-          *ngFor="let option of options; trackBy: trackByFn"
-          [disabled]="option.disabled"
-          [value]="option[value]"
-          [style.display]="hideOption(option) ? 'none' : 'flex'"
-          >{{ option[display] }}
-        </mat-option>
-      </mat-select>
-      <mat-hint style="color:red" *ngIf="showErrorMsg">{{ errorMsg }}</mat-hint>
-    </mat-form-field>
-  `,
-  styles: [
-    `
-      .box-search {
-        margin: 8px;
-        border-radius: 2px;
-        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.16),
-          0 0 0 1px rgba(0, 0, 0, 0.08);
-        transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
-        display: flex;
-      }
-      .box-search input {
-        flex: 1;
-        border: none;
-        outline: none;
-      }
-      .box-select-all {
-        width: 36px;
-        line-height: 33px;
-        color: #808080;
-        text-align: center;
-      }
-      .search-button {
-        width: 36px;
-        height: 36px;
-        line-height: 33px;
-        color: #808080;
-      }
-      .pl-1 {
-        padding-left: 1rem;
-      }
-    `
-  ]
+    selector: 'mat-select-autocomplete',
+    templateUrl: './select-autocomplete.component.html',
+    styleUrls: ['./select-autocomplete.component.scss'],
+    standalone: false
 })
-export class SelectAutocompleteComponent implements OnChanges, DoCheck {
-  @Input() selectPlaceholder: string = "search...";
+export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterViewInit {
+  @Input() selectPlaceholder = 'search...';
   @Input() placeholder: string;
-  @Input() options;
+  @Input() options$;
   @Input() disabled = false;
-  @Input() display = "display";
-  @Input() value = "value";
-  @Input() formControl: FormControl = new FormControl();
-  @Input() errorMsg: string = "Field is required";
+  @Input() display = 'display';
+  @Input() extraDisplay?; // value before option text ex: [id-description]
+  @Input() value = 'value';
+  @Input() fieldFormControl: FormControl = new FormControl();
+  @Input() errorMsg = 'Field is required';
   @Input() showErrorMsg = false;
   @Input() selectedOptions;
   @Input() multiple = true;
+  @Input() labelCount = 1;
+  @Input() appearance: 'fill' | 'outline' = 'fill';
+  @Input() fieldLabel: string;
+  @Input() fieldsSelectors: ElementsSelectors;
+  @Input() ElementWidth;
 
-  // New Options
-  @Input() labelCount: number = 1;
-  @Input() appearance: "standard" | "fill" | "outline" = "standard";
+  @Output() selectionChange: EventEmitter<any> = new EventEmitter();
+  @Output() onSearch: EventEmitter<any> = new EventEmitter();
 
-  @Output()
-  selectionChange: EventEmitter<any> = new EventEmitter();
+  @ViewChild('selectElem', { static: false }) selectElem;
+  @ViewChild('searchInput', { static: false }) searchInput;
 
-  @ViewChild("selectElem") selectElem;
+  options: Array<any> = [];
+  selectedOps: Array<any> = [];
+  originOptions: Array<any> = [];
 
+
+  //to be reconsidered
   filteredOptions: Array<any> = [];
   selectedValue: Array<any> = [];
+  displayOptions: Array<string> = [];
+  allSelectedValues = [];
   selectAllChecked = false;
-  displayString = "";
-  constructor() {}
+  displayString = '';
+  ctrlClicked = false;
+  searchBy = 'initial';
+  selectedVal;
+  search = false;
 
-  ngOnChanges() {
+  constructor() { }
+
+  ngOnInit(): void {
+    this.onSearch.emit('');
+    this.options$.subscribe(res => {
+      if(!this.selectedOps.length) {
+      this.selectedOptions.forEach(element => {
+        const selectedOp = res?.find(option => option[this.value] == element);
+        if(selectedOp) {
+          this.selectedOps = [...new Set([...this.selectedOps, selectedOp])];
+        }
+      });
+    }
+      const copyArray = [...res ?? []];
+      copyArray.sort(this.sortOptions());
+      this.originOptions = this.filteredOptions = copyArray;
+      if (this.search) {
+        const notSelectedOptions = [];
+        this.originOptions.forEach(option => {
+          if (!this.selectedValue.includes(option[this.value])) {
+            notSelectedOptions.push(option);
+          }
+        });
+        this.options = notSelectedOptions;
+      }
+      if (!this.searchBy) { this.reArrangeOptions(); }
+      this.checkIfAllSelected();
+    });
+  }
+  ngOnChanges(): void {
+    this.selectedValue = this.selectedValue ?? [];
     if (this.disabled) {
-      this.formControl.disable();
+      this.fieldFormControl.disable();
     } else {
-      this.formControl.enable();
+      this.fieldFormControl.enable();
     }
-    this.filteredOptions = this.options;
     if (this.selectedOptions) {
-      this.selectedValue = this.selectedOptions;
-    } else if (this.formControl.value) {
-      this.selectedValue = this.formControl.value;
+      this.selectedValue = this.selectedValue ? [...new Set([...this.selectedValue, ...this.selectedOptions])] : this.selectedOptions;
+      this.allSelectedValues = this.selectedOptions;
+      if (this.selectedVal) {
+        if (this.selectedOptions.length) {
+          this.options = this.originOptions?.filter((obj) => {
+            if (obj[this.value] == this.selectedVal && !this.selectedOps.find(op => op[this.value] === this.selectedVal)) {
+              this.selectedOps.push(obj);
+            }
+            return obj[this.value] != this.selectedVal.toString();
+          });
+          this.selectedOps = this.selectedOps.filter(obj => this.selectedValue.includes(obj[this.value]));
+        }
+        else {
+          this.clearSelection();
+        }
+      }
+      this.selectedOps.sort(this.sortOptions());
+      this.displayOptions.sort(this.sortOptions());
+      this.onDisplayString();
+
+    } else if (this.fieldFormControl.value) {
+      this.selectedValue = this.fieldFormControl.value;
+      this.allSelectedValues = this.selectedOptions;
+      this.onDisplayString();
+    }
+    this.selectedVal = null;
+  }
+
+  ngAfterViewInit(): void {
+    this.searchInput.nativeElement.value = '';
+    if (this.selectElem) {
+      let click: MouseEvent = null;
+      if (this.selectElem.overlayDir) {
+        this.selectElem.overlayDir.backdropClick.subscribe((event) => { // For backward compatibility for old versions
+          // the backdrop element is still in the DOM, so store the event for using after it has been detached
+          click = event;
+        });
+        this.selectElem.overlayDir.detach.subscribe((a) => {
+          if (click) {
+            const el = document.elementFromPoint(click.pageX, click.pageY) as HTMLElement;
+            el.click();
+          }
+        });
+      } else if (this.selectElem._overlayDir) { // To handle the update of angular 12 which made the overlayDir property private
+        this.selectElem._overlayDir.backdropClick.subscribe((event) => {
+          // the backdrop element is still in the DOM, so store the event for using after it has been detached
+          click = event;
+        });
+        this.selectElem._overlayDir.detach.subscribe((a) => {
+          if (click) {
+            const el = document.elementFromPoint(click.pageX, click.pageY) as HTMLElement;
+            el.click();
+          }
+        });
+      }
+      const nativeEl = this.selectElem._elementRef.nativeElement;
+      nativeEl.addEventListener('focus', () => {
+        this.selectElem.open();
+      });
+
     }
   }
 
-  ngDoCheck() {
-    if (!this.selectedValue.length) {
-      this.selectionChange.emit(this.selectedValue);
-    }
-  }
 
-  toggleDropdown() {
+  //not used
+  toggleDropdown(): void {
     this.selectElem.toggle();
   }
 
-  toggleSelectAll(val) {
+  toggleSelectAll(val): void {
     if (val.checked) {
       this.filteredOptions.forEach(option => {
         if (!this.selectedValue.includes(option[this.value])) {
           this.selectedValue = this.selectedValue.concat([option[this.value]]);
+          this.allSelectedValues = this.selectedValue;
+          if(this.search) {
+            this.selectedOps = [...new Set([...this.selectedOps, ...this.originOptions])];
+          }
+          else {
+            this.selectedOps = this.originOptions;
+          }
+          this.options = [];
         }
       });
     } else {
       const filteredValues = this.getFilteredOptionsValues();
-      this.selectedValue = this.selectedValue.filter(
-        item => !filteredValues.includes(item)
-      );
+      this.selectedValue = this.selectedValue.filter(item => !filteredValues.includes(item));
+      this.allSelectedValues = this.selectedValue;
+      this.options = this.originOptions;
+      this.selectedOps = [];
+      this.selectedVal = null;
     }
     this.selectionChange.emit(this.selectedValue);
   }
 
-  filterItem(value) {
-    this.filteredOptions = this.options.filter(
-      item => item[this.display].toLowerCase().indexOf(value.toLowerCase()) > -1
-    );
-    this.selectAllChecked = true;
-    this.filteredOptions.forEach(item => {
-      if (!this.selectedValue.includes(item[this.value])) {
-        this.selectAllChecked = false;
-      }
-    });
-    if (!this.filteredOptions.length) {
-      this.selectAllChecked = false;
-    }
+  filterItem(value): void {
+    this.searchBy = value;
+    this.onSearch.emit(this.searchBy);
   }
 
-  hideOption(option) {
-    return !(this.filteredOptions.indexOf(option) > -1);
+  hideOption(option): boolean {
+    return (this.filteredOptions.indexOf(option) === -1);
   }
 
   // Returns plain strings array of filtered values
-  getFilteredOptionsValues() {
+  getFilteredOptionsValues(): any {
     const filteredValues = [];
     this.filteredOptions.forEach(option => {
-      filteredValues.push(option.value);
+      filteredValues.push(option[this.value]);
     });
     return filteredValues;
   }
 
-  onDisplayString() {
-    this.displayString = "";
-    if (this.selectedValue && this.selectedValue.length) {
-      let displayOption = [];
+  onDisplayString(): string {
+    this.displayString = '';
+    if (this.allSelectedValues && this.allSelectedValues.length) {
       if (this.multiple) {
         // Multi select display
-        for (let i = 0; i < this.labelCount; i++) {
-          displayOption[i] = this.options.filter(
-            option => option[this.value] === this.selectedValue[i]
-          )[0];
-        }
-        if (displayOption.length) {
-          for (let i = 0; i < displayOption.length; i++) {
-            if (displayOption[i] && displayOption[i][this.display]) {
-              this.displayString += displayOption[i][this.display] + ",";
+        if (this.selectedOps.length) {
+          for (const option of this.selectedOps) {
+            if (option && option[this.display]) {
+              this.displayString += option[this.display] + ', ';
             }
           }
-          this.displayString = this.displayString.slice(0, -1);
+          this.displayString = this.displayString.slice(0, -2);
           if (
             this.selectedValue.length > 1 &&
             this.selectedValue.length > this.labelCount
@@ -216,33 +237,148 @@ export class SelectAutocompleteComponent implements OnChanges, DoCheck {
         }
       } else {
         // Single select display
-        displayOption = this.options.filter(
-          option => option[this.value] === this.selectedValue
+        this.searchInput.displayOption = this.originOptions.filter(
+          option => option[this.value] == this.selectedValue
         );
-        if (displayOption.length) {
-          this.displayString = displayOption[0][this.display];
+        if (this.displayOptions.length) {
+          this.displayString = this.displayOptions[0][this.display];
         }
       }
     }
     return this.displayString;
   }
 
-  onSelectionChange(val) {
-    const filteredValues = this.getFilteredOptionsValues();
-    let count = 0;
-    if (this.multiple) {
-      this.selectedValue.filter(item => {
-        if (filteredValues.includes(item)) {
-          count++;
-        }
-      });
-      this.selectAllChecked = count === this.filteredOptions.length;
+  optionClicked(v): void {
+    this.selectedVal = v.source.value;
+    if (!v.source.selected && v.isUserInput) {
+      const index = this.allSelectedValues.indexOf(v.source.value);
+      this.allSelectedValues.splice(index, 1);
+      this.selectedOps =  this.selectedOps.filter(option => {
+        return option.id !== v.source.value;
+      })
+      // to be reviewd
+      this.searchInput.nativeElement.value = '';
+      this.onSearch.emit('');
     }
-    this.selectedValue = val.value;
-    this.selectionChange.emit(this.selectedValue);
   }
 
-  public trackByFn(index, item) {
+  onSelectionChange(val): void {
+    this.selectedValue = val.value;
+    this.allSelectedValues.push(...this.selectedValue);
+    this.allSelectedValues = [...new Set([...this.allSelectedValues])];
+    this.checkIfAllSelected();
+    this.selectionChange.emit(this.allSelectedValues);
+  }
+
+  public trackByFn(index, item): any {
     return item.value;
+  }
+
+  setFocus(event): void {
+    if (event) {
+      this.searchInput.nativeElement.focus();
+    } else {
+      this.searchInput.nativeElement.value = '';
+      this.searchBy = undefined;
+      this.onSearch.emit('');
+    }
+    this.reArrangeOptions();
+  }
+
+  private focusSiblingField(direction: number): void {
+    const host = this.selectElem._elementRef.nativeElement as HTMLElement;
+    const selector =
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]),' +
+      ' textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const fields = Array.from(document.querySelectorAll<HTMLElement>(selector)).filter(
+      el => !el.closest('.cdk-overlay-container') && el.offsetParent !== null
+    );
+    const next = fields[fields.indexOf(host) + direction];
+    this.selectElem.close();
+    next?.focus();
+  }
+
+  keyUp(ev): void {
+    if (ev.keyCode === 17) {
+      this.ctrlClicked = false;
+    }
+  }
+
+  keyDown(ev): void {
+    if (ev.key === 'Tab') {
+      // The panel steals focus into this search input when it opens, so a plain Tab walks the
+      // overlay's own controls and then escapes the form. Close and hand focus to the next field.
+      ev.preventDefault();
+      ev.stopPropagation();
+      this.focusSiblingField(ev.shiftKey ? -1 : 1);
+      return;
+    }
+    if (ev.keyCode === 17) {
+      this.ctrlClicked = true;
+    }
+    if (ev.keyCode === 65 && this.ctrlClicked) { // to prevent select all behavior on clicking Ctrl+A
+      ev.cancelBubble = true;
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+    }
+    if (ev.code === 'Space') {
+      ev.stopPropagation();
+    }
+    if (ev.keyCode == 13) {
+      ev.cancelBubble = true;
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      if (!this.selectElem.options.first.selected) {
+        this.selectElem.options.first.select();
+      }
+    }
+  }
+
+  clearSelection(): void {
+    this.selectedValue = [];
+    this.selectionChange.emit(this.selectedValue);
+    this.options = this.originOptions;
+    this.selectAllChecked = false;
+    this.allSelectedValues = [];
+    this.selectedOps = [];
+    this.selectedVal = null;
+  }
+
+  reArrangeOptions(): void {
+    const selectedOptions = [];
+    const unselectedOptions = [];
+    this.originOptions.forEach(option => {
+      if (this.selectedValue.includes(option[this.value])) {
+        selectedOptions.push(option);
+      } else {
+        unselectedOptions.push(option);
+      }
+    });
+    if(this.selectedValue.length === 0) {
+      this.options = this.originOptions;
+      this.selectedOps = [];
+    }
+    else {
+      this.options = [...unselectedOptions];
+    }
+  }
+
+  checkIfAllSelected(): void {
+    if (this.multiple && this.filteredOptions.length > 0) {
+      this.selectAllChecked = this.filteredOptions.every(item => this.selectedValue.includes(item[this.value]));
+    }
+  }
+  sortOptions() {
+    return (a, b) => {
+      const nameA = a[this.display].toUpperCase();
+      const nameB = b[this.display].toUpperCase();
+      if (nameA < nameB) {
+        return -1;
+      }
+      if (nameA > nameB) {
+        return 1;
+      }
+      return 0;
+    };
   }
 }
