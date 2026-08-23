@@ -70,13 +70,8 @@ jobs:
           fi
           echo "Built @cloudinn/mat-select-autocomplete@$built"
 
-      # Trusted publishing needs Node >= 22.14 and npm >= 11.5.1. No token: npm authenticates via
-      # the OIDC id-token, and provenance is attached automatically.
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
-
+      # Trusted publishing needs npm >= 11.5.1 and NO .npmrc auth config: setup-node's
+      # registry-url writes a placeholder NODE_AUTH_TOKEN that preempts the OIDC exchange.
       - run: npm install -g npm@latest
 
       - name: Publish
