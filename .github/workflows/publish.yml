@@ -74,17 +74,10 @@ jobs:
       # registry-url writes a placeholder NODE_AUTH_TOKEN that preempts the OIDC exchange.
       - run: npm install -g npm@latest
 
-      - name: Debug publish environment
-        run: |
-          node -v
-          npm -v
-          which npm
-          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then echo "OIDC env present"; else echo "OIDC env MISSING"; fi
-
       - name: Publish
         if: github.event_name == 'push' || inputs.dry_run == false
         working-directory: dist/select-autocomplete
-        run: npm publish --access public --loglevel verbose
+        run: npm publish --access public
 
       - name: Dry run
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run == true
