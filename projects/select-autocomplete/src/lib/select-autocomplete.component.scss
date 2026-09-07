@@ -42,7 +42,6 @@
   max-height: 200px;
   overflow-x: hidden;
   overflow-y: auto;
-  text-align:justify;
 }
 .selected-options {
   background-color:#f5f5f5;
@@ -87,7 +86,8 @@
   max-height: 500px !important;
   padding: 0px !important;
   .mat-mdc-option {
-    height: 40px !important;
+    height: auto !important;
+    min-height: 40px !important;
   }
   .mat-option.mat-active {
     background-color: #f5f5f5;
