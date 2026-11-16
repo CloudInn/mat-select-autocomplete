@@ -93,3 +93,17 @@
     background-color: #f5f5f5;
   }
 }
+.trigger-text {
+  display: flex;
+  max-width: 100%;
+}
+.trigger-names {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.trigger-count {
+  flex: none;
+  margin-left: 4px;
+}
