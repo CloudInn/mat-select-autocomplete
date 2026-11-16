@@ -60,6 +60,8 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
   allSelectedValues = [];
   selectAllChecked = false;
   displayString = '';
+  displayNames = '';
+  displayCount = '';
   ctrlClicked = false;
   searchBy = 'initial';
   selectedVal;
@@ -107,16 +109,20 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
       if (this.selectedVal) {
         if (this.selectedOptions.length) {
           this.options = this.originOptions?.filter((obj) => {
-            if (obj[this.value] == this.selectedVal && !this.selectedOps.find(op => op[this.value] === this.selectedVal)) {
+            const isSelected = this.selectedValue.some(v => v == obj[this.value]);
+            if (isSelected && !this.selectedOps.find(op => op[this.value] == obj[this.value])) {
               this.selectedOps.push(obj);
             }
-            return obj[this.value] != this.selectedVal.toString();
+            return !isSelected;
           });
           this.selectedOps = this.selectedOps.filter(obj => this.selectedValue.includes(obj[this.value]));
         }
         else {
           this.clearSelection();
         }
+      }
+      if (this.multiple && !this.sameValues(this.fieldFormControl.value, this.selectedOptions)) {
+        this.fieldFormControl.setValue([...this.selectedOptions], { emitEvent: false });
       }
       this.selectedOps.sort(this.sortOptions());
       this.displayOptions.sort(this.sortOptions());
@@ -172,6 +178,7 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
   }
 
   toggleSelectAll(val): void {
+    this.selectAllChecked = val.checked;
     if (val.checked) {
       this.filteredOptions.forEach(option => {
         if (!this.selectedValue.includes(option[this.value])) {
@@ -194,6 +201,7 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
       this.selectedOps = [];
       this.selectedVal = null;
     }
+    this.fieldFormControl.setValue(this.selectedValue, { emitEvent: false });
     this.selectionChange.emit(this.selectedValue);
   }
 
@@ -217,23 +225,20 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
 
   onDisplayString(): string {
     this.displayString = '';
+    this.displayNames = '';
+    this.displayCount = '';
     if (this.allSelectedValues && this.allSelectedValues.length) {
       if (this.multiple) {
         // Multi select display
         if (this.selectedOps.length) {
-          for (const option of this.selectedOps) {
-            if (option && option[this.display]) {
-              this.displayString += option[this.display] + ', ';
-            }
-          }
-          this.displayString = this.displayString.slice(0, -2);
-          if (
-            this.selectedValue.length > 1 &&
-            this.selectedValue.length > this.labelCount
-          ) {
-            this.displayString += ` (+${this.selectedValue.length -
-              this.labelCount} others)`;
-          }
+          const names = this.selectedOps
+            .filter(option => option && option[this.display])
+            .slice(0, Math.max(this.labelCount, 1))
+            .map(option => option[this.display]);
+          const rest = this.selectedValue.length - names.length;
+          this.displayNames = names.join(', ');
+          this.displayCount = rest > 0 ? `(+${rest} others)` : '';
+          this.displayString = [this.displayNames, this.displayCount].filter(part => part).join(' ');
         }
       } else {
         // Single select display
@@ -241,7 +246,7 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
           option => option[this.value] == this.selectedValue
         );
         if (this.displayOptions.length) {
-          this.displayString = this.displayOptions[0][this.display];
+          this.displayString = this.displayNames = this.displayOptions[0][this.display];
         }
       }
     }
@@ -336,6 +341,7 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
 
   clearSelection(): void {
     this.selectedValue = [];
+    this.fieldFormControl.setValue(this.selectedValue, { emitEvent: false });
     this.selectionChange.emit(this.selectedValue);
     this.options = this.originOptions;
     this.selectAllChecked = false;
@@ -368,6 +374,13 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
       this.selectAllChecked = this.filteredOptions.every(item => this.selectedValue.includes(item[this.value]));
     }
   }
+  private sameValues(a, b): boolean {
+    const toKeys = (v) => new Set((Array.isArray(v) ? v : (v == null || v === '' ? [] : [v])).map(x => String(x)));
+    const left = toKeys(a);
+    const right = toKeys(b);
+    return left.size === right.size && [...left].every(v => right.has(v));
+  }
+
   sortOptions() {
     return (a, b) => {
       const nameA = a[this.display].toUpperCase();
