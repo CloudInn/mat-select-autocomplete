@@ -3,11 +3,11 @@
   <mat-label *ngIf="fieldLabel">{{ fieldLabel }}</mat-label>
   <mat-select #selectElem id="{{ fieldsSelectors?.selectField }}" [attr.data-cy]="fieldsSelectors?.selectField"
     [disabled]="disabled" [multiple]="multiple" [placeholder]="placeholder" [formControl]="fieldFormControl"
-    [(ngModel)]="selectedValue" (selectionChange)="onSelectionChange($event)" (openedChange)="setFocus($event)">
+    (selectionChange)="onSelectionChange($event)" (openedChange)="setFocus($event)">
     <div class="search-container">
       <div class="box-search">
-        <mat-checkbox *ngIf="multiple" color="primary" class="box-select-all" [(ngModel)]="selectAllChecked"
-          (change)="toggleSelectAll($event); searchInput.value = ''; filterItem(''); search = false;">
+        <mat-checkbox *ngIf="multiple" color="primary" class="box-select-all" [checked]="selectAllChecked"
+          (change)="toggleSelectAll($event); searchInput.value = ''; filterItem(''); search = false; $event.source.checked = selectAllChecked">
         </mat-checkbox>
         <input #searchInput id="{{ fieldsSelectors?.inputField }}" [attr.data-cy]="fieldsSelectors?.searchField"
           type="text" [ngClass]="{ 'pl-1': !multiple }" (input)="filterItem(searchInput.value)"
@@ -22,7 +22,12 @@
         </div>
       </div>
     </div>
-    <mat-select-trigger> {{ onDisplayString() }} </mat-select-trigger>
+    <mat-select-trigger>
+      <span class="trigger-text" *ngIf="onDisplayString()">
+        <span class="trigger-names"> {{ displayNames }} </span>
+        <span class="trigger-count" *ngIf="displayCount">{{ displayCount }} </span>
+      </span>
+    </mat-select-trigger>
     <div class="options-container">
       <mat-option *ngFor="let option of options; let i = index" [disabled]="option.disabled" [value]="option[value]"
         [style.display]="'flex'" (onSelectionChange)="optionClicked($event);"
