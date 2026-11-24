@@ -2,7 +2,7 @@
   [ngStyle]="{'width': ElementWidth ? ElementWidth : '100%' }">
   <mat-label *ngIf="fieldLabel">{{ fieldLabel }}</mat-label>
   <mat-select #selectElem id="{{ fieldsSelectors?.selectField }}" [attr.data-cy]="fieldsSelectors?.selectField"
-    [disabled]="disabled" [multiple]="multiple" [placeholder]="placeholder" [formControl]="fieldFormControl"
+    [disabled]="disabled" [multiple]="multiple" [placeholder]="placeholder" [formControl]="fieldFormControl" [compareWith]="compareValues"
     (selectionChange)="onSelectionChange($event)" (openedChange)="setFocus($event)">
     <div class="search-container">
       <div class="box-search">

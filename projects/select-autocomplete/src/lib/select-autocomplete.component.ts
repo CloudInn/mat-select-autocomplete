@@ -374,6 +374,10 @@ export class SelectAutocompleteComponent implements OnInit, OnChanges, AfterView
       this.selectAllChecked = this.filteredOptions.every(item => this.selectedValue.includes(item[this.value]));
     }
   }
+  // A selected value may arrive as text (e.g. from a link) while the option holds a number;
+  // treat 12 and '12' as the same option so it still shows ticked.
+  compareValues = (a, b): boolean => a === b || (a != null && b != null && String(a) === String(b));
+
   private sameValues(a, b): boolean {
     const toKeys = (v) => new Set((Array.isArray(v) ? v : (v == null || v === '' ? [] : [v])).map(x => String(x)));
     const left = toKeys(a);
